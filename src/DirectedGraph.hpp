@@ -1,15 +1,13 @@
-#include <vector>
+//#include <vector>
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <cstring>
 #include <stdexcept>
 #include <numeric>
-
-
-
-
-
+#include <algorithm>
+#include <vector>
 
 
 struct DirectedEdge {
@@ -19,7 +17,7 @@ struct DirectedEdge {
 
 
 struct DirectedGraph{
-    // DirectedGraph "contains" all nodes 1,2,3, ... , size
+    // DirectedGraph "contains" all nodes 0,1,2, ... , size-1
     // Nodes are referred (and indexed) using this id,
     // which doesn't need to be stored.
     unsigned int size;
@@ -31,18 +29,17 @@ struct DirectedGraph{
 
     }
     DirectedGraph(std::string filename){
+        std::ios_base::sync_with_stdio(false);
 
         // Get a directed graph by parsing 
         // a .mtx (sparse matrix) file
         std::ifstream file(filename);
-        std::string line;
         if (!file.good()) {
             throw std::invalid_argument("Unable to read file: " + filename);
         }
 
         unsigned int rows, cols, n_values;
-        // discard comments and first line of integers, which
-        // indicate size of data 
+        // discard first lines of file, which we don't need
         char c = file.peek();
         while(c == '%'){
             file.clear();
@@ -53,21 +50,28 @@ struct DirectedGraph{
         file >> rows >> cols >> n_values;
 
         this->size = rows;
+        this->edges.reserve(n_values);
 
-        unsigned int weight, from, to;
-        //read file while ignoring lines that are not 
-        //in the form "integer integer integer"
-        while(!file.eof()){ 
-            if (file >> from >> to >> weight){
-                //Subtract 1 so that node ids start from 0
-                this->edges.push_back(DirectedEdge{to-1, from-1});
-                // std::cout << "S" ;
+        // I dont like C and pointers, but I didn't manage to find a
+        // C++ facility that was as fast as this
+        const int line_bufsize = 64;
+        char line_buffer[line_bufsize];      
+        unsigned int ints[3];
+        while (!file.eof()) {
+            int i = 0;
+            file.getline(line_buffer, line_bufsize);
+            char* token = strtok(line_buffer, " ");
+            
+            if (token == NULL) continue;
+            while (token != NULL) {
+                if (i > 1) { break; }
+                ints[i] = atoi(token);
+                token = strtok(NULL, " \n");
+                i++;
+                
             }
-            else{
-                file.clear();
-                file.ignore(256, '\n');
-                // std::cout << "F" ;
-            }
+            // std::cout << ints[0] << " " << ints[1] << " " << ints[2] << "\n";
+            this->edges.push_back(DirectedEdge{ ints[1] - 1, ints[0] - 1 });      
         }
     }
 };
@@ -80,21 +84,18 @@ struct GraphCSR {
     unsigned int max_node_id;
 
     GraphCSR(DirectedGraph& graph_coo) {
-        auto& edges = graph_coo.edges;
-        /*
-        //doesn't assume graph_coo edges are sorted in any way
+        auto edges = graph_coo.edges; //makes a copy
+       
+        auto comparison_funct = [](DirectedEdge& e1, DirectedEdge& e2)
+        {
+            //return true if e1 < e2
+            if (e1.from < e2.from) return true;
+            if (e1.from == e2.from) return e1.to < e2.to;
+            return false;
+        };
+        std::sort(edges.begin(), edges.end(), comparison_funct);
 
-        //counts[i] will contain the amount of edges that satistfy from==i
-        std::vector<unsigned int> counts(graph_coo.max_node_id);
-        for (auto& edge : edges) {
-            counts[edge.from]++;
-        }
-
-        from_idx.resize(counts.size() + 1);
-        from_idx = std::exclusive_scan(); //todo
-        */
-
-        //LETS ASSUME PRIMARY SORT -> TO, SECONDARY SORT -> FROM
+        //now edges are sorted
         int n_nodes = graph_coo.size;
         vec_to.reserve(edges.size());
         std::vector<unsigned int> counts(n_nodes, 0);
