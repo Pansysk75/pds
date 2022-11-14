@@ -29,7 +29,6 @@ struct DirectedGraph{
 
     }
     DirectedGraph(std::string filename){
-        std::ios_base::sync_with_stdio(false);
 
         // Get a directed graph by parsing 
         // a .mtx (sparse matrix) file
@@ -81,9 +80,10 @@ struct GraphCSR {
     //stores directed graph edges in "Compressed Sparse Row" format
     std::vector<unsigned int> vec_from_idx;
     std::vector<unsigned int> vec_to;
-    unsigned int max_node_id;
+    unsigned int size; //number of nodes
 
     GraphCSR(DirectedGraph& graph_coo) {
+        this->size = graph_coo.size;
         auto edges = graph_coo.edges; //makes a copy
        
         auto comparison_funct = [](DirectedEdge& e1, DirectedEdge& e2)
@@ -93,25 +93,60 @@ struct GraphCSR {
             if (e1.from == e2.from) return e1.to < e2.to;
             return false;
         };
+
         std::sort(edges.begin(), edges.end(), comparison_funct);
 
         //now edges are sorted
-        int n_nodes = graph_coo.size;
         vec_to.reserve(edges.size());
-        std::vector<unsigned int> counts(n_nodes, 0);
+        std::vector<unsigned int> counts(size, 0);
         for (auto& edge : edges) {
             counts[edge.from]++;
             vec_to.push_back(edge.to);
         }
-        vec_from_idx.resize(n_nodes + 1, 0);
+        vec_from_idx.resize(size + 1, 0);
         vec_from_idx[0] = 0;
         //accumulate count
-        for (int i = 0; i < n_nodes; i++) {
+        for (int i = 0; i < size; i++) {
             vec_from_idx[i + 1] = vec_from_idx[i] + counts[i];
         }
-
-
     }
 };
+
+struct GraphCSC {
+    //stores directed graph edges in "Compressed Sparse Row" format
+    std::vector<unsigned int> vec_to_idx;
+    std::vector<unsigned int> vec_from;
+    unsigned int size; //number of nodes
+
+    GraphCSC(DirectedGraph& graph_coo) {
+        this->size = graph_coo.size;
+        auto edges = graph_coo.edges; //makes a copy
+
+        auto comparison_funct = [](DirectedEdge& e1, DirectedEdge& e2)
+        {
+            //return true if e1 < e2
+            if (e1.to < e2.to) return true;
+            if (e1.to == e2.to) return e1.from < e2.from;
+            return false;
+        };
+
+        std::sort(edges.begin(), edges.end(), comparison_funct);
+
+        //now edges are sorted
+        vec_from.reserve(edges.size());
+        std::vector<unsigned int> counts(size, 0);
+        for (auto& edge : edges) {
+            counts[edge.to]++;
+            vec_from.push_back(edge.from);
+        }
+        vec_to_idx.resize(size + 1, 0);
+        vec_to_idx[0] = 0;
+        //accumulate count
+        for (int i = 0; i < size; i++) {
+            vec_to_idx[i + 1] = vec_to_idx[i] + counts[i];
+        }
+    }
+};
+
 
 
