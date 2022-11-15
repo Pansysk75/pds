@@ -1,4 +1,5 @@
 ﻿#include "DirectedGraph.hpp"
+#include "utilities.hpp"
 #include <numeric>
 #include <algorithm>
 #include <list>
@@ -57,7 +58,7 @@ std::vector<int> TarjanSCCAlgorithm(GraphCSR& graph) {
 }
 
 std::vector<int> ColoringSCCAlgorithm(GraphCSC& graph) {
-    std::cout << "Starting coloring algorithm\n";
+    // std::cout << "Starting coloring algorithm\n";
     unsigned int iteration_counter = 1;
 
 
@@ -79,7 +80,7 @@ std::vector<int> ColoringSCCAlgorithm(GraphCSC& graph) {
 
     //start algorithm
     while (!queue.empty()) {
-        std::cout << "Starting iteration " << iteration_counter << "\n";
+        // std::cout << "Starting iteration " << iteration_counter << "\n";
         //init colors
         for (auto& elem : queue) {
             colors[elem] = elem;
@@ -131,7 +132,7 @@ std::vector<int> ColoringSCCAlgorithm(GraphCSC& graph) {
             }
         }
 
-        std::cout << "Completed iteration " << iteration_counter++ << "\n";
+        // std::cout << "Completed iteration " << iteration_counter++ << "\n";
         //update queue so that it only contains nodes where scc_id[node]==-1
         queue.erase(
             std::remove_if(queue.begin(), queue.end(), [&scc_ids](auto& elem) { return scc_ids[elem] != -1; }),
@@ -189,10 +190,37 @@ int main(int argc, char *argv[]){
 
     // std::cout << "Finished preprocessing of " << graph.size << " nodes and " << graph.vec_to.size() << " edges\n";
 
-    auto result1 = ColoringSCCAlgorithm(csc_graph);
-    auto result2 = TarjanSCCAlgorithm(csr_graph);
+    utilities::timer timer;
 
-    // EqualityTestSCC(result1, result2);
+    int iterations = 20;
+
+    double t_coloring = 0;
+    double t_tarjan = 0;
+
+    std::cout << "Starting benchmark (" << iterations << " iterations)" << std::endl;
+    for(int i=0; i<iterations; i++){
+        timer.start();
+        auto result1 = ColoringSCCAlgorithm(csc_graph);
+        timer.stop();
+        t_coloring += timer.get()/iterations;
+
+        timer.start();
+        auto result2 = TarjanSCCAlgorithm(csr_graph);
+        timer.stop();
+        t_tarjan += timer.get()/iterations;
+
+        if (!EqualityTestSCC(result1, result2)){
+            std::cout << "Error: Equality test failed!" << std::endl;
+            return 1;
+        }
+        std::cout << "." << std::flush;
+
+    }
+    std::cout << "\nColoring Algorithm: " << t_coloring << " ns\n" ; 
+    std::cout << "Tarjan's Algorithm: " << t_tarjan << " ns\n" ;
+    std::cout << "Speedup: " << t_tarjan/t_coloring << "\n";
+
+
     return 0;
 
 }
