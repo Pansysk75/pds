@@ -7,9 +7,6 @@
 #include <stack>
 #include <functional>
 
-void _tarjan_dfs() {
-
-}
 
 std::vector<int> TarjanSCCAlgorithm(GraphCSR& graph) {
 
@@ -163,9 +160,14 @@ bool EqualityTestSCC(std::vector<int>& scc_ids_1, std::vector<int>& scc_ids_2) {
     return true;
 }
 
-int main(){
+int main(int argc, char *argv[]){
 
-    std::cout << "Reading file...\n";
+    if(argc<2){
+        std::cout << "Usage: sequential my_graph_file.mtx" << std::endl;
+        return 1;
+    }
+    std::string filename(argv[1]);
+    std::cout << "Reading file '" << filename << "'\n";
 
    // DirectedGraph coo_graph;
    // coo_graph.size = 6;
@@ -176,8 +178,8 @@ int main(){
    //     {4,0}, {5,2}
    //      };
     
-    auto coo_graph = DirectedGraph("../celegansneural.mtx");
-    // auto coo_graph = DirectedGraph("../language.mtx");
+     auto coo_graph = DirectedGraph(filename);
+    //auto coo_graph = DirectedGraph("../language.mtx");
     // auto coo_graph = DirectedGraph("../wb-edu.mtx");
 
    GraphCSR csr_graph(coo_graph);
@@ -190,7 +192,7 @@ int main(){
     auto result1 = ColoringSCCAlgorithm(csc_graph);
     auto result2 = TarjanSCCAlgorithm(csr_graph);
 
-    EqualityTestSCC(result1, result2);
+    // EqualityTestSCC(result1, result2);
     return 0;
 
 }
