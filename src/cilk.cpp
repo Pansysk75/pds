@@ -8,6 +8,10 @@
 #include <stack>
 #include <functional>
 
+#include <atomic>
+#include <mutex>
+#include <cilk/cilk.h>
+
 
 std::vector<int> TarjanSCCAlgorithm(GraphCSR& graph) {
 
@@ -64,13 +68,14 @@ std::vector<int> ColoringSCCAlgorithm(GraphCSC& graph) {
 
     //scc_id of -1 means that the node hasn't been added to a SCC yet
     std::vector<int> scc_ids(graph.size, -1);
-    int max_ssc_id = 0;
+    std::atomic<int> max_ssc_id(0);
 
     //init queue
 
     std::vector<unsigned int> queue;
 
     std::vector<unsigned int> colors;
+    std::mutex color_mutex;
     colors.resize(graph.size);
     queue.reserve(graph.size);
 
@@ -90,26 +95,30 @@ std::vector<int> ColoringSCCAlgorithm(GraphCSC& graph) {
         bool any_changed_color = true;
         while (any_changed_color) {
             any_changed_color = false;
-            for (auto& v : queue) {
+            cilk_for(int v_idx=0; v_idx<queue.size(); v_idx++) {
+                auto& v = queue[v_idx];
                 //get all "u"s that point to this "v"
                 unsigned int u_idx_start = graph.vec_to_idx[v];
                 unsigned int u_idx_end = graph.vec_to_idx[v + 1];
                 for (unsigned int u_idx = u_idx_start; u_idx < u_idx_end; u_idx++) {
                     auto u = graph.vec_from[u_idx];
+                    //color_mutex.lock();
                     if ((scc_ids[u] == -1) && (colors[v] > colors[u])) { //does the order here matter?
                         colors[v] = colors[u];
                         any_changed_color = true;
                     }
+                    //color_mutex.unlock();
                 }
             }
         }
         //color propagation finished
         //From every node where node_id == node_color, start BFS
-        for (auto& v : queue) {
-            if (colors[v] == v) {
+        std::mutex mut;
+        cilk_for (int v_idx=0; v_idx<queue.size(); v_idx++) {
+            auto v = queue[v_idx];
+            if (colors[v] == v){
                 unsigned int curr_color = colors[v];
-                int curr_scc_id = max_ssc_id;
-                max_ssc_id++; //DATA RACE, CAREFUL HERE
+                int curr_scc_id = max_ssc_id.fetch_add(1);
                 //BFS from v to its predecessors of the same color, and assign
                 //all visited nodes to the SCC
                 std::queue<unsigned int> bfs_queue;
@@ -123,10 +132,12 @@ std::vector<int> ColoringSCCAlgorithm(GraphCSC& graph) {
                     unsigned int u_idx_end = graph.vec_to_idx[curr_node + 1];
                     for (unsigned int u_idx = u_idx_start; u_idx < u_idx_end; u_idx++) {
                         auto u = graph.vec_from[u_idx];
+                        // mut.lock();
                         if (scc_ids[u] == -1 && colors[u] == curr_color) {
                             bfs_queue.push(u);
                             scc_ids[u] = curr_scc_id;
                         }
+                        // mut.unlock();
                     }
                 }
             }
@@ -204,8 +215,8 @@ int main(int argc, char *argv[]){
         t_tarjan += timer.get()/iterations;
 
         if (!EqualityTestSCC(result1, result2)){
-            std::cout << "Error: Equality test failed!" << std::endl;
-            return 1;
+           std::cout << "Error: Equality test failed!" << std::endl;
+          return 1;
         }
         std::cout << "." << std::flush;
 

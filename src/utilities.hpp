@@ -13,5 +13,5 @@ class timer {
 		double get() { return (double)std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count(); }
 
 	};
-    
+	
 }
