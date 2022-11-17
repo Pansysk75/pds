@@ -1,65 +1,15 @@
-﻿#include "DirectedGraph.hpp"
-#include "utilities.hpp"
+﻿#include "../scc_algorithms.hpp"
+
 #include <numeric>
 #include <algorithm>
 #include <list>
 #include <queue>
-
-#include <stack>
-#include <functional>
 
 #include <atomic>
 #include <mutex>
 #include <cilk/cilk.h>
 
 
-std::vector<int> TarjanSCCAlgorithm(GraphCSR& graph) {
-
-    std::vector<int> scc_ids(graph.size, -1);
-    std::vector<int> low(graph.size);
-    std::vector<bool> on_stack(graph.size, false);
-    std::stack<unsigned int> stack;
-    unsigned int id = 0;
-    unsigned int scc_count = 0;
-
-    std::function<void(int)> dfs;
-
-    dfs = [&](unsigned int at) -> void {
-        stack.push(at);
-        on_stack[at] = true;
-        scc_ids[at] = id;
-        low[at] = id;
-        id++;
-
-        // visit all neighbours
-        // (not efficient but i wrote this alg just for validation)
-        unsigned int to_idx_start = graph.vec_from_idx[at];
-        unsigned int to_idx_end = graph.vec_from_idx[at + 1];
-        for (unsigned int to_idx = to_idx_start; to_idx < to_idx_end; to_idx++) {
-            auto to = graph.vec_to[to_idx];
-            if (scc_ids[to] == -1) dfs(to); //call recursion
-            if (on_stack[to]) low[at] = std::min(low[at], low[to]);
-        }
-        if (scc_ids[at] == low[at]) {
-           while(!stack.empty()) {
-               auto node = stack.top();
-               stack.pop();
-               on_stack[node] = false;
-               low[node] = scc_ids[at];
-               if (node == at) break;
-            }
-           scc_count++;
-
-        }
-    };  
-
-    for (int i = 0; i < graph.size; i++) {
-        if (scc_ids[i] == -1) {
-            dfs(i);
-        }
-    }
-    return low;
-}
 
 std::vector<int> ColoringSCCAlgorithm(GraphCSC& graph) {
     // std::cout << "Starting coloring algorithm\n";
@@ -172,60 +122,3 @@ bool EqualityTestSCC(std::vector<int>& scc_ids_1, std::vector<int>& scc_ids_2) {
     return true;
 }
 
-int main(int argc, char *argv[]){
-
-    if(argc<2){
-        std::cout << "Usage: sequential my_graph_file.mtx" << std::endl;
-        return 1;
-    }
-    std::string filename(argv[1]);
-    std::cout << "Reading file '" << filename << "'\n";
-
-   // DirectedGraph coo_graph;
-   // coo_graph.size = 6;
-   // coo_graph.edges = { 
-   //     {0,1}, {1,2},
-   //     {1,4}, {1,5},
-   //     {2,3}, {3,5},
-   //     {4,0}, {5,2}
-   //      };
-    
-     auto coo_graph = DirectedGraph(filename);
-
-    GraphCSR csr_graph(coo_graph);
-    GraphCSC csc_graph(coo_graph);
-
-    utilities::timer timer;
-
-    int iterations = 5;
-
-    double t_coloring = 0;
-    double t_tarjan = 0;
-
-    std::cout << "Starting benchmark (" << iterations << " iterations)" << std::endl;
-    for(int i=0; i<iterations; i++){
-        timer.start();
-        auto result1 = ColoringSCCAlgorithm(csc_graph);
-        timer.stop();
-        t_coloring += timer.get()/iterations;
-
-        timer.start();
-        auto result2 = TarjanSCCAlgorithm(csr_graph);
-        timer.stop();
-        t_tarjan += timer.get()/iterations;
-
-        if (!EqualityTestSCC(result1, result2)){
-           std::cout << "Error: Equality test failed!" << std::endl;
-          return 1;
-        }
-        std::cout << "." << std::flush;
-
-    }
-    std::cout << "\nColoring Algorithm: " << t_coloring << " ns\n" ; 
-    std::cout << "Tarjan's Algorithm: " << t_tarjan << " ns\n" ;
-    std::cout << "Speedup: " << t_tarjan/t_coloring << "\n";
-
-
-    return 0;
-
-}

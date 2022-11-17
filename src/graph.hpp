@@ -1,14 +1,8 @@
-//#include <vector>
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <cstring>
-#include <stdexcept>
-#include <numeric>
-#include <algorithm>
 #include <vector>
-
+#include <string>
+#include <fstream>
+#include <cstring>
+#include <algorithm>
 
 struct DirectedEdge {
     unsigned int from;
@@ -17,19 +11,14 @@ struct DirectedEdge {
 
 
 struct DirectedGraph{
-    // DirectedGraph "contains" all nodes 0,1,2, ... , size-1
-    // Nodes are referred (and indexed) using this id,
-    // which doesn't need to be stored.
+    // DirectedGraph is a list of directed edges.
+    // Implicitly "contains" all nodes 0,1,2, ... , size-1
+    // Nodes are referred (and indexed) using this id
+    // (which doesn't need to be stored anywhere).
     unsigned int size;
     std::vector<DirectedEdge> edges;
 
-    DirectedGraph() 
-        :size(0) 
-    {
-
-    }
     DirectedGraph(std::string filename){
-
         // Get a directed graph by parsing 
         // a .mtx (sparse matrix) file
         std::ifstream file(filename);
@@ -51,8 +40,8 @@ struct DirectedGraph{
         this->size = rows;
         this->edges.reserve(n_values);
 
-        // I dont like C and pointers, but I didn't manage to find a
-        // C++ facility that was as fast as this
+        // I don't like C and C-style arrays, but I didn't manage
+        // to find a C++ facility that was as fast as this
         const int line_bufsize = 64;
         char line_buffer[line_bufsize];      
         unsigned int ints[3];
@@ -69,7 +58,7 @@ struct DirectedGraph{
                 i++;
                 
             }
-            // std::cout << ints[0] << " " << ints[1] << " " << ints[2] << "\n";
+            //subtract 1 so that node ids start from 0
             this->edges.push_back(DirectedEdge{ ints[1] - 1, ints[0] - 1 });      
         }
     }
@@ -77,12 +66,18 @@ struct DirectedGraph{
 
 
 struct GraphCSR {
-    //stores directed graph edges in "Compressed Sparse Row" format
+    // Stores directed graph edges in "Compressed Sparse Row" format
+    // We define directed edges as pairs (i. j), with direction from node i to node j.
+    // We can quickly get all directed edges starting from i with the 
+    // pairs (i, vec_to[q]), where q takes all integer values
+    // vec_from_idx[i] <= q < vec_from_idx[i+1] 
     std::vector<unsigned int> vec_from_idx;
     std::vector<unsigned int> vec_to;
     unsigned int size; //number of nodes
 
     GraphCSR(DirectedGraph& graph_coo) {
+        //Construct a CSR from a COO (list of edges)
+
         this->size = graph_coo.size;
         auto edges = graph_coo.edges; //makes a copy
        
@@ -96,7 +91,6 @@ struct GraphCSR {
 
         std::sort(edges.begin(), edges.end(), comparison_funct);
 
-        //now edges are sorted
         vec_to.reserve(edges.size());
         std::vector<unsigned int> counts(size, 0);
         for (auto& edge : edges) {
@@ -113,12 +107,17 @@ struct GraphCSR {
 };
 
 struct GraphCSC {
-    //stores directed graph edges in "Compressed Sparse Row" format
+    // Stores directed graph edges in "Compressed Sparse Row" format.
+    // We define directed edges as pairs (i. j), with direction from node i to node j.
+    // We can quickly get all directed edges pointing to j with the 
+    // pairs (vec_from[q], j), where q takes all integer values
+    // vec_to_idx[j] <= q < vec_to_idx[j+1] 
     std::vector<unsigned int> vec_to_idx;
     std::vector<unsigned int> vec_from;
     unsigned int size; //number of nodes
 
     GraphCSC(DirectedGraph& graph_coo) {
+        //Construct a CSC from a COO (list of edges)
         this->size = graph_coo.size;
         auto edges = graph_coo.edges; //makes a copy
 
@@ -132,7 +131,6 @@ struct GraphCSC {
 
         std::sort(edges.begin(), edges.end(), comparison_funct);
 
-        //now edges are sorted
         vec_from.reserve(edges.size());
         std::vector<unsigned int> counts(size, 0);
         for (auto& edge : edges) {
