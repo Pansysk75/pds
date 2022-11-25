@@ -11,7 +11,7 @@
 
 
 
-std::pair<std::vector<int>, int>  ColoringSCCAlgorithm_OpenCilk(GraphCSC& graph) {
+std::pair<std::vector<int>, int>  ColoringSCCAlgorithm(GraphCSC& graph) {
     // std::cout << "Starting coloring algorithm\n";
     unsigned int iteration_counter = 1;
 
