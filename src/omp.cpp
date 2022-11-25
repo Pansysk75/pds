@@ -1,6 +1,5 @@
 ﻿#include "scc_algorithms.hpp"
 #include <iostream>
-#include <utility>
 #include "utilities.hpp"
 
 int main(int argc, char *argv[]){
@@ -27,7 +26,7 @@ int main(int argc, char *argv[]){
         timer.start();
 
         // auto result = TarjanSCCAlgorithm(csr_graph);
-        auto result = ColoringSCCAlgorithm(csc_graph);
+        auto result = ColoringSCCAlgorithm_OpenMP(csc_graph);
 
         timer.stop();
         totaltime+= timer.get()/iterations;
@@ -35,7 +34,7 @@ int main(int argc, char *argv[]){
         std::cout << "Number of SCCs: " << std::get<1>(result) << std::endl;
     }
 
-    std::cout << "\n____Finished Benchmark____\n";
+    std::cout << "____Finished Benchmark____\n";
 
     std::cout << "t = " << totaltime/1000000.0 << " ms" <<std::endl;
 

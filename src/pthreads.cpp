@@ -1,4 +1,4 @@
-﻿#include "scc_algorithms.hpp"
+#include "scc_algorithms.hpp"
 #include <iostream>
 #include <utility>
 #include "utilities.hpp"
@@ -27,7 +27,7 @@ int main(int argc, char *argv[]){
         timer.start();
 
         // auto result = TarjanSCCAlgorithm(csr_graph);
-        auto result = ColoringSCCAlgorithm(csc_graph);
+        auto result = ColoringSCCAlgorithm_PThreads(csc_graph);
 
         timer.stop();
         totaltime+= timer.get()/iterations;

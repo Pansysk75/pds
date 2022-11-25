@@ -5,27 +5,23 @@
 #include <list>
 #include <queue>
 
-#include <atomic>
-#include <mutex>
-#include <cilk/cilk.h>
+#include <iostream>
 
 
-
-std::pair<std::vector<int>, int>  ColoringSCCAlgorithm_OpenCilk(GraphCSC& graph) {
+std::pair<std::vector<int>, int> ColoringSCCAlgorithm(GraphCSC& graph) {
     // std::cout << "Starting coloring algorithm\n";
     unsigned int iteration_counter = 1;
 
 
     //scc_id of -1 means that the node hasn't been added to a SCC yet
     std::vector<int> scc_ids(graph.size, -1);
-    std::atomic<int> max_ssc_id(0);
+    int max_ssc_id = 0;
 
     //init queue
 
     std::vector<unsigned int> queue;
 
     std::vector<unsigned int> colors;
-    std::mutex color_mutex;
     colors.resize(graph.size);
     queue.reserve(graph.size);
 
@@ -42,37 +38,32 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm_OpenCilk(GraphCSC& graph)
         }
 
         //color propagation
-        std::atomic<bool> any_changed_color(true);
-        // bool any_changed_color(true);
-        
+        bool any_changed_color = true;
         while (any_changed_color) {
             any_changed_color = false;
-            
-            cilk_for(int v_idx=0; v_idx<queue.size(); v_idx++){
-                auto v = queue[v_idx];
+            for(int v_idx=0; v_idx<queue.size(); v_idx++) {
+                auto& v = queue[v_idx];
                 //get all "u"s that point to this "v"
                 unsigned int u_idx_start = graph.vec_to_idx[v];
                 unsigned int u_idx_end = graph.vec_to_idx[v + 1];
                 for (unsigned int u_idx = u_idx_start; u_idx < u_idx_end; u_idx++) {
                     auto u = graph.vec_from[u_idx];
-                    if (scc_ids[u] == -1) { //does the order here matter?
-                        //std::lock_guard<std::mutex> guard(color_mutex);
-                        if(colors[v] > colors[u]){
-                            any_changed_color = true;
-                            colors[v] = colors[u];
-                        }
+                    //color_mutex.lock();
+                    if ((scc_ids[u] == -1) && (colors[v] > colors[u])) { //does the order here matter?
+                        colors[v] = colors[u];
+                        any_changed_color = true;
                     }
+                    //color_mutex.unlock();
                 }
             }
         }
         //color propagation finished
         //From every node where node_id == node_color, start BFS
-        std::mutex mut;
-        cilk_for (int v_idx=0; v_idx<queue.size(); v_idx++) {
+        for (int v_idx=0; v_idx<queue.size(); v_idx++) {
             auto v = queue[v_idx];
             if (colors[v] == v){
                 unsigned int curr_color = colors[v];
-                int curr_scc_id = max_ssc_id.fetch_add(1);
+                int curr_scc_id = max_ssc_id++;
                 //BFS from v to its predecessors of the same color, and assign
                 //all visited nodes to the SCC
                 std::queue<unsigned int> bfs_queue;
@@ -86,12 +77,12 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm_OpenCilk(GraphCSC& graph)
                     unsigned int u_idx_end = graph.vec_to_idx[curr_node + 1];
                     for (unsigned int u_idx = u_idx_start; u_idx < u_idx_end; u_idx++) {
                         auto u = graph.vec_from[u_idx];
-                        //mut.lock();
+                        // mut.lock();
                         if (scc_ids[u] == -1 && colors[u] == curr_color) {
                             bfs_queue.push(u);
                             scc_ids[u] = curr_scc_id;
                         }
-                        //mut.unlock();
+                        // mut.unlock();
                     }
                 }
             }
@@ -106,3 +97,4 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm_OpenCilk(GraphCSC& graph)
 
     return {std::move(scc_ids), max_ssc_id}; //make a pair by moving (aka not copying) the vector into it
 }
+
