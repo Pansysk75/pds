@@ -1,9 +1,10 @@
-﻿#include "../scc_algorithms.hpp"
+﻿#include "scc_algorithms.hpp"
 
 #include <numeric>
 #include <algorithm>
 #include <list>
 #include <queue>
+#include <iostream>
 
 #include <atomic>
 #include <mutex>
@@ -16,20 +17,20 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm(GraphCSC& graph) {
     unsigned int iteration_counter = 1;
 
 
-    //scc_id of -1 means that the node hasn't been added to a SCC yet
+   //scc_id of -1 means that the node hasn't been added to a SCC yet
     std::vector<int> scc_ids(graph.size, -1);
-    std::atomic<int> max_ssc_id(0);
-
-    //init queue
+    std::atomic<int> max_scc_id(TrimSCC(graph, scc_ids));
+    std::cout << "trimmed: " << max_scc_id << std::endl;
+    // int max_scc_id = 0;
 
     std::vector<unsigned int> queue;
 
     std::vector<unsigned int> colors;
-    std::mutex color_mutex;
     colors.resize(graph.size);
     queue.reserve(graph.size);
 
     for (unsigned int i = 0; i < graph.size; i++) {
+        if (scc_ids[i] == -1) 
         queue.push_back(i);
     }
 
@@ -72,7 +73,7 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm(GraphCSC& graph) {
             auto v = queue[v_idx];
             if (colors[v] == v){
                 unsigned int curr_color = colors[v];
-                int curr_scc_id = max_ssc_id.fetch_add(1);
+                int curr_scc_id = max_scc_id.fetch_add(1);
                 //BFS from v to its predecessors of the same color, and assign
                 //all visited nodes to the SCC
                 std::queue<unsigned int> bfs_queue;
@@ -104,5 +105,5 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm(GraphCSC& graph) {
             queue.end());
     }
 
-    return {std::move(scc_ids), max_ssc_id}; //make a pair by moving (aka not copying) the vector into it
+    return {std::move(scc_ids), max_scc_id}; //make a pair by moving (aka not copying) the vector into it
 }

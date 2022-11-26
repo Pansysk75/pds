@@ -2,10 +2,10 @@ opencilk_clang++ := /opt/opencilk/bin/clang++
 
 out_dir := exec
 src_files :=  src/scc_algorithms/tarjan.cpp src/scc_algorithms/testing.cpp
-headers:= $(wildcard *.hpp)
+headers:= $(wildcard *.hpp) $(wildcard scc_algorithms/*.hpp)
 
 
-default: ${out_dir}/sequential ${out_dir}/omp ${out_dir}/cilk   ${out_dir}/pthreads
+default: ${out_dir}/sequential ${out_dir}/omp ${out_dir}/cilk  ${out_dir}/pthreads
 all: default ${out_dir}/cilk_cs ${out_dir}/cilk_cs-bench ${out_dir}/cilk_race
 
 ${out_dir}/sequential: src/main.cpp src/scc_algorithms/coloring_sequential.cpp ${headers} | ${out_dir}
