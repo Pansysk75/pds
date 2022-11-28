@@ -7,7 +7,6 @@
 #include <iostream>
 
 #include <atomic>
-#include <mutex>
 #include <cilk/cilk.h>
 
 
@@ -20,8 +19,7 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm(GraphCSC& graph) {
    //scc_id of -1 means that the node hasn't been added to a SCC yet
     std::vector<int> scc_ids(graph.size, -1);
     std::atomic<int> max_scc_id(TrimSCC(graph, scc_ids));
-    std::cout << "trimmed: " << max_scc_id << std::endl;
-    // int max_scc_id = 0;
+    //std::cout << "trimmed: " << max_scc_id << std::endl;
 
     std::vector<unsigned int> queue;
 
@@ -57,7 +55,6 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm(GraphCSC& graph) {
                 for (unsigned int u_idx = u_idx_start; u_idx < u_idx_end; u_idx++) {
                     auto u = graph.vec_from[u_idx];
                     if (scc_ids[u] == -1) { //does the order here matter?
-                        //std::lock_guard<std::mutex> guard(color_mutex);
                         if(colors[v] > colors[u]){
                             any_changed_color = true;
                             colors[v] = colors[u];
@@ -68,7 +65,6 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm(GraphCSC& graph) {
         }
         //color propagation finished
         //From every node where node_id == node_color, start BFS
-        std::mutex mut;
         cilk_for (int v_idx=0; v_idx<queue.size(); v_idx++) {
             auto v = queue[v_idx];
             if (colors[v] == v){
@@ -87,12 +83,10 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm(GraphCSC& graph) {
                     unsigned int u_idx_end = graph.vec_to_idx[curr_node + 1];
                     for (unsigned int u_idx = u_idx_start; u_idx < u_idx_end; u_idx++) {
                         auto u = graph.vec_from[u_idx];
-                        //mut.lock();
                         if (scc_ids[u] == -1 && colors[u] == curr_color) {
                             bfs_queue.push(u);
                             scc_ids[u] = curr_scc_id;
                         }
-                        //mut.unlock();
                     }
                 }
             }

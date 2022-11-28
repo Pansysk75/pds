@@ -1,5 +1,6 @@
 #include <functional>
 #include <iostream>
+#include <mutex>
 
 // I made a few facilities that wrap around pthreads.
 // This is mainly done for three reasons:
@@ -148,28 +149,22 @@ struct for_loop_partitioner{
   // the work queues 
   F& f;
 
-  for_loop_partitioner(F& for_func, int i_begin, int i_end, int n_threads=8, int min_chunk_size = 4096)
+  for_loop_partitioner(F& for_func, int i_begin, int i_end, int n_threads=8)
   :f(for_func)
   {
         int total_elements = i_end-i_begin;
-        int n_chunks = n_threads*4;
+        int n_chunks = std::min(n_threads*8, total_elements);
         int chunk_size = total_elements/n_chunks;
-
-        //if work is small, do it sequentially right here;
-        if(chunk_size < min_chunk_size){
-            f(i_begin, i_end);
-            return;
-        }
 
         ThreadPool tp(n_threads); 
         int for_idx = i_begin;
         int i = 0;
         while(for_idx < i_end){ 
-        std::function<void()> func = std::bind(std::ref(f),for_idx, std::min(for_idx+chunk_size, i_end));
-        WorkUnit w(func);        
-        tp.schedule(w, i%n_threads);
-        for_idx += chunk_size;
-        i++;
+            std::function<void()> func = std::bind(std::ref(f),for_idx, std::min(for_idx+chunk_size, i_end));
+            WorkUnit w(func);        
+            tp.schedule(w, i%n_threads);
+            for_idx += chunk_size;
+            i++;
         }
 
         tp.launch();

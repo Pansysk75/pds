@@ -6,33 +6,23 @@
 int main(int argc, char *argv[]){
 
     if(argc<2){
-        std::cout << "Usage: program some_data_file.mtx" << std::endl;
+        std::cout << "Usage: program some_data_file.mtx n_iterations(default=1)" << std::endl;
         return 1;
     }
     std::string filename(argv[1]);
 
+    int iterations = 1;
+    if (argc>2) iterations = std::atoi(argv[2]);
+
     std::cout << "Parsing file '" << filename << "'\n";
 
-    auto coo_graph = DirectedGraph(filename);
-    GraphCSC csc_graph(coo_graph);
-
-    unsigned int from_sum = 0;
-    unsigned int to_sum = 0;
-
-    for(auto& edge : coo_graph.edges){
-        from_sum += edge.from + 1 ;
-        to_sum += edge.to + 1;
-    }
-
-    std::cout << "from_sum: " << from_sum << std::endl;
-    std::cout << "to_sum: " << to_sum << std::endl;
+    GraphCSC csc_graph = GraphCSC(DirectedGraph{filename});
 
 
     std::cout << "____Starting Benchmark____\n";
 
     utilities::timer timer;
 
-    int iterations = 1;
     double totaltime = 0;
     for(int i=0; i<iterations; i++){
         timer.start();
@@ -41,7 +31,7 @@ int main(int argc, char *argv[]){
 
         timer.stop();
         totaltime+= timer.get()/iterations;
-
+        // std::cout << ".";
         std::cout << "Number of SCCs: " << std::get<1>(result) << std::endl;
     }
 

@@ -75,11 +75,9 @@ struct GraphCSR {
     std::vector<unsigned int> vec_to;
     unsigned int size; //number of nodes
 
-    GraphCSR(DirectedGraph& graph_coo) {
-        //Construct a CSR from a COO (list of edges)
-
+     GraphCSR(DirectedGraph&& graph_coo) {
         this->size = graph_coo.size;
-        auto edges = graph_coo.edges; //makes a copy
+        auto& edges = graph_coo.edges; //makes a copy
        
         auto comparison_funct = [](DirectedEdge& e1, DirectedEdge& e2)
         {
@@ -104,6 +102,13 @@ struct GraphCSR {
             vec_from_idx[i + 1] = vec_from_idx[i] + counts[i];
         }
     }
+     
+
+    // GraphCSR(DirectedGraph& graph_coo) {
+    //     //Construct a CSR from a COO (list of edges)
+    // }
+
+
 };
 
 struct GraphCSC {
@@ -116,10 +121,10 @@ struct GraphCSC {
     std::vector<unsigned int> vec_from;
     unsigned int size; //number of nodes
 
-    GraphCSC(DirectedGraph& graph_coo) {
+    GraphCSC(DirectedGraph&& graph_coo) {
         //Construct a CSC from a COO (list of edges)
         this->size = graph_coo.size;
-        auto edges = graph_coo.edges; //makes a copy
+        auto& edges = graph_coo.edges; //makes a copy
 
         auto comparison_funct = [](DirectedEdge& e1, DirectedEdge& e2)
         {

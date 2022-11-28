@@ -16,8 +16,8 @@ std::pair<std::vector<int>, int> ColoringSCCAlgorithm(GraphCSC& graph) {
     //scc_id of -1 means that the node hasn't been added to a SCC yet
     std::vector<int> scc_ids(graph.size, -1);
     int max_scc_id = TrimSCC(graph, scc_ids);
-    std::cout << "trimmed: " << max_scc_id << std::endl;
-    // int max_scc_id = 0;
+    //std::cout << "trimmed: " << max_scc_id << std::endl;
+
 
     std::vector<unsigned int> queue;
 
@@ -49,12 +49,10 @@ std::pair<std::vector<int>, int> ColoringSCCAlgorithm(GraphCSC& graph) {
                 unsigned int u_idx_end = graph.vec_to_idx[v + 1];
                 for (unsigned int u_idx = u_idx_start; u_idx < u_idx_end; u_idx++) {
                     auto u = graph.vec_from[u_idx];
-                    //color_mutex.lock();
                     if ((scc_ids[u] == -1) && (colors[v] > colors[u])) { //does the order here matter?
                         colors[v] = colors[u];
                         any_changed_color = true;
                     }
-                    //color_mutex.unlock();
                 }
             }
         }
@@ -78,12 +76,10 @@ std::pair<std::vector<int>, int> ColoringSCCAlgorithm(GraphCSC& graph) {
                     unsigned int u_idx_end = graph.vec_to_idx[curr_node + 1];
                     for (unsigned int u_idx = u_idx_start; u_idx < u_idx_end; u_idx++) {
                         auto u = graph.vec_from[u_idx];
-                        // mut.lock();
                         if (scc_ids[u] == -1 && colors[u] == curr_color) {
                             bfs_queue.push(u);
                             scc_ids[u] = curr_scc_id;
                         }
-                        // mut.unlock();
                     }
                 }
             }
