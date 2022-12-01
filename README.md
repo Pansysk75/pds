@@ -9,12 +9,14 @@ from each vertex to any other vertex in the subgraph.
 
 In this assignment, I'm implementing a parallel algorithm to identify the number of SCCs in large directed graphs, using OpenCilk, OpenMP and PThreads.
 
-Dependencies:  
+## Dependencies:  
+- gcc/g++ compiler
+- `make` for building using Makefile
 - OpenCilk installation (default directory for the OpenCilk compiler is /opt/opencilk/bin/clang++ , modify the first line of the Makefile if somewhere different).
 
-How to build:  
+## How to build:  
 - Navigate to the directory of the Makefile and run `make` command. Executables should be created in folder `./exec/` .
 
-How to run:
+## How to run:
 - Obtain .mtx files that represent graphs.
 - For any of the executables that were created, run `./exec/some_exe my_graph.mtx` (an additional number may be passed to indicate running the benchmark for more iterations, e.g. `exec/pthreads celegansneural.mtx 500`)
