@@ -1,7 +1,7 @@
 opencilk_clang++ := /opt/opencilk/bin/clang++
 
 out_dir := exec
-src_files :=  src/scc_algorithms/tarjan.cpp src/scc_algorithms/testing.cpp
+misc_files :=  src/scc_algorithms/tarjan.cpp src/scc_algorithms/testing.cpp #unused
 headers:= $(wildcard *.hpp) $(wildcard scc_algorithms/*.hpp)
 
 

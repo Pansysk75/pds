@@ -19,7 +19,7 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm(GraphCSC& graph) {
    //scc_id of -1 means that the node hasn't been added to a SCC yet
     std::vector<int> scc_ids(graph.size, -1);
     std::atomic<int> max_scc_id(TrimSCC(graph, scc_ids));
-    //std::cout << "trimmed: " << max_scc_id << std::endl;
+    // std::cout << "trimmed: " << max_scc_id << std::endl;
 
     std::vector<unsigned int> queue;
 
@@ -35,14 +35,14 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm(GraphCSC& graph) {
     //start algorithm
     while (!queue.empty()) {
         // std::cout << "Starting iteration " << iteration_counter << "\n";
-        //init colors
+        //initialize colors
         for (auto& elem : queue) {
             colors[elem] = elem;
         }
 
         //color propagation
+        //this bool had to be made atomic only for OpenCilk
         std::atomic<bool> any_changed_color(true);
-        // bool any_changed_color(true);
         
         while (any_changed_color) {
             any_changed_color = false;
@@ -54,11 +54,10 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm(GraphCSC& graph) {
                 unsigned int u_idx_end = graph.vec_to_idx[v + 1];
                 for (unsigned int u_idx = u_idx_start; u_idx < u_idx_end; u_idx++) {
                     auto u = graph.vec_from[u_idx];
-                    if (scc_ids[u] == -1) { //does the order here matter?
-                        if(colors[v] > colors[u]){
-                            any_changed_color = true;
-                            colors[v] = colors[u];
-                        }
+                    if (scc_ids[u] == -1 && colors[v] > colors[u]) { 
+                        any_changed_color = true;
+                        colors[v] = colors[u];
+                        
                     }
                 }
             }
@@ -99,5 +98,5 @@ std::pair<std::vector<int>, int>  ColoringSCCAlgorithm(GraphCSC& graph) {
             queue.end());
     }
 
-    return {std::move(scc_ids), max_scc_id}; //make a pair by moving (aka not copying) the vector into it
+    return {std::move(scc_ids), max_scc_id};  //returns a pair
 }

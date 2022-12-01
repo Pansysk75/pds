@@ -16,7 +16,8 @@ int main(int argc, char *argv[]){
 
     std::cout << "Parsing file '" << filename << "'\n";
 
-    GraphCSC csc_graph = GraphCSC(DirectedGraph{filename});
+    DirectedGraph graph(filename);
+    GraphCSC csc_graph(graph);
 
 
     std::cout << "____Starting Benchmark____\n";

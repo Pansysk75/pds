@@ -53,7 +53,7 @@ std::pair<std::vector<int>, int> ColoringSCCAlgorithm(GraphCSC& graph) {
                     unsigned int u_idx_end = graph.vec_to_idx[v + 1];
                     for (unsigned int u_idx = u_idx_start; u_idx < u_idx_end; u_idx++) {
                         auto u = graph.vec_from[u_idx];
-                        if ((scc_ids[u] == -1) && (colors[v] > colors[u])) { //does the order here matter?
+                        if ((scc_ids[u] == -1) && (colors[v] > colors[u])) {
                             colors[v] = colors[u];
                             any_changed_color = true;
                         }
@@ -112,5 +112,5 @@ std::pair<std::vector<int>, int> ColoringSCCAlgorithm(GraphCSC& graph) {
             queue.end());
     }
 
-    return {std::move(scc_ids), max_scc_id}; //make a pair by moving (aka not copying) the vector into it
+    return {std::move(scc_ids), max_scc_id};  //returns a pair
 }
